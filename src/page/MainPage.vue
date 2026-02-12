@@ -1,9 +1,4 @@
 <script setup lang="ts">
-  // import { ref } from 'vue'
-
-  // defineProps<{ msg: string }>()
-
-  // const count = ref(0)
 </script>
 
 <template>
@@ -13,7 +8,7 @@
       <br>
       Words can be drag and drop. Select tooltips in the menu
     </p>
-    <RouterLink class="btn" to="/about">Start</RouterLink>
+    <RouterLink class="btn" to="/game">Start</RouterLink>
   </main>
 </template>
 
@@ -26,7 +21,7 @@
   width: 100%;
   height: 100vh;
   color: #fff;
-  background: linear-gradient(rgba(0, 0, 0, 0.5)), url(/src/assets/background.jpg);
+  background: linear-gradient(rgba(0, 0, 0, 0.7)), url(/src/assets/background.jpg);
 }
 .title {
   font-size: 3em;
