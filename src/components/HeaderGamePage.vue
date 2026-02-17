@@ -1,8 +1,7 @@
 
 <script setup="ts">
     import Select from './Select.vue';
-
-    const log = (msg) => console.log(msg);
+    import {log} from '../utils/utils';
 </script>
 
 <template>
@@ -32,8 +31,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    width: calc(100% - 2rem);
-    padding: 0.5rem 1rem;
+    width: 100%;
 }
 .btns {
     display: flex;
