@@ -1,5 +1,35 @@
 # Vue 3 + TypeScript + Vite
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+RSS Puzzle is an interactive mini-game aimed at enhancing English language skills. Players assemble sentences from jumbled words, inspired by Lingualeo's Phrase Constructor training. The game integrates various levels of difficulty, hint options, and a unique puzzle-like experience with artwork.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+# Quick start
+
+**Clone the repository**
+
+```bash
+git clone <repository-url>
+cd <project-folder>
+```
+
+**Install dependencies**
+
+```bash
+npm install
+```
+
+**Configure environment variables**
+
+- Rename `.env.example` to `.env`
+- Open .env and add your GitHub token to the VITE_GITHUB_TOKEN variable:
+    ```
+    VITE_GITHUB_TOKEN=your_token_here
+    ```
+- ПYou can get a token in GitHub settings:`Settings → Developer settings → Personal access tokens → Tokens (classic)`
+
+**Run the project**
+
+```bash
+npm run dev
+```
+
+After running, the project will be available at the address shown in the terminal(`http://localhost:5173`).

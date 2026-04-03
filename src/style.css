@@ -6,8 +6,8 @@
     background-color: #242424;
 }
 
-body, #app {
+body,
+#app {
     height: 100vh;
     width: 100%;
 }
-

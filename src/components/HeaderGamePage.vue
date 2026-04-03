@@ -1,24 +1,38 @@
-
 <script setup="ts">
-    import Select from './Select.vue';
-    import {log} from '../utils/utils';
+import Select from './Select.vue'
+import { log } from '../utils/utils'
 </script>
 
 <template>
     <header class="header">
         <div class="selects">
-            <Select name="Level"/>
-            <Select name="Page"/>
+            <Select name="Level" />
+            <Select name="Page" />
         </div>
         <div class="btns">
-            <button class="btn btn-volume" type="button" @click="log('volume')"></button>
-            <button class="btn btn-doc" type="button" @click="log('doc')"></button>
-            <button class="btn btn-music" type="button" @click="log('music')"></button>
-            <button class="btn btn-pic" type="button" @click="log('pic')"></button>
+            <button
+                class="btn btn-volume"
+                type="button"
+                @click="log('volume')"
+            ></button>
+            <button
+                class="btn btn-doc"
+                type="button"
+                @click="log('doc')"
+            ></button>
+            <button
+                class="btn btn-music"
+                type="button"
+                @click="log('music')"
+            ></button>
+            <button
+                class="btn btn-pic"
+                type="button"
+                @click="log('pic')"
+            ></button>
         </div>
     </header>
 </template>
-
 
 <style scoped lang="postcss">
 .selects {
@@ -36,7 +50,6 @@
 .btns {
     display: flex;
     gap: 1rem;
-
 }
 .btn {
     display: block;
@@ -44,7 +57,7 @@
     width: 20px;
     height: 20px;
     border: none;
-    cursor:pointer;
+    cursor: pointer;
     &:after {
         content: '';
         position: absolute;
