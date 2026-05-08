@@ -2,15 +2,20 @@
     <div class="select">
         <label :for="`${name}-select`">{{ name }}</label>
         <select :name="`${name}`" :id="`${name}-select`">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
+            <option v-for="level in selectLevels" :value="level" :key="level">
+                {{ level }}
+            </option>
         </select>
     </div>
 </template>
 
 <script setup lang="ts">
 defineProps<{ name: string }>()
+const selectLevels = ref(0)
+import { ref } from 'vue'
+import { getGameLevel } from '../store/store'
+const { levels } = getGameLevel()
+selectLevels.value = levels
 </script>
 
 <style scoped>

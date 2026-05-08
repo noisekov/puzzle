@@ -4,15 +4,17 @@ import { log } from '../utils/utils'
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
+import { getGameLevel } from '../store/store'
 
 const loading = ref(false)
-const post = ref(null)
 const error = ref(null)
+const levels = ref(null)
+const levelsState = getGameLevel()
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
-async function fetchData(id) {
-    error.value = post.value = null
+async function fetchData() {
+    error.value = levels.value = null
     loading.value = true
     const TOKEN = import.meta.env.VITE_GITHUB_TOKEN
     try {
@@ -25,10 +27,11 @@ async function fetchData(id) {
             }
         )
         const data = await response.json()
-        data.forEach((element) => {
-            console.log(element.download_url)
-        })
-        post.value = data
+        // data.forEach((element) => {
+        //     console.log(element.download_url)
+        // })
+        levelsState.setLevels(data.length)
+        levels.value = data.length
     } catch (err) {
         error.value = err.toString()
     } finally {
@@ -41,7 +44,7 @@ async function fetchData(id) {
     <div class="container">
         <div v-if="loading" class="loading">Loading...</div>
         <div v-if="error" class="error">{{ error }}</div>
-        <div class="wrapper" v-if="post">
+        <div class="wrapper" v-if="levels">
             <HeaderGamePage />
             <div class="translate">
                 <button
