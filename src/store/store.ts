@@ -1,15 +1,15 @@
 import { defineStore } from 'pinia'
 
-export const getGameLevel = defineStore('data', {
+export const allData = defineStore('data', {
     state: () => ({
-        levels: 0,
+        data: [{}],
     }),
     getters: {
-        getLevels: (state) => state.levels,
+        getData: (state) => state.data,
     },
     actions: {
-        setLevels(value: number) {
-            this.levels = value
+        setData(value: Array<object>) {
+            this.data = value
         },
     },
 })

@@ -4,12 +4,12 @@ import { log } from '../utils/utils'
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
-import { getGameLevel } from '../store/store'
+import { allData } from '../store/store'
 
 const loading = ref(false)
 const error = ref(null)
 const levels = ref(null)
-const levelsState = getGameLevel()
+const mainData = allData()
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
@@ -27,10 +27,10 @@ async function fetchData() {
             }
         )
         const data = await response.json()
+        mainData.setData(data)
         // data.forEach((element) => {
         //     console.log(element.download_url)
         // })
-        levelsState.setLevels(data.length)
         levels.value = data.length
     } catch (err) {
         error.value = err.toString()

@@ -1,7 +1,11 @@
 <template>
     <div class="select">
         <label :for="`${name}-select`">{{ name }}</label>
-        <select :name="`${name}`" :id="`${name}-select`">
+        <select
+            :name="`${name}`"
+            :id="`${name}-select`"
+            @change="handlePage($event)"
+        >
             <option v-for="level in selectLevels" :value="level" :key="level">
                 {{ level }}
             </option>
@@ -13,9 +17,17 @@
 defineProps<{ name: string }>()
 const selectLevels = ref(0)
 import { ref } from 'vue'
-import { getGameLevel } from '../store/store'
-const { levels } = getGameLevel()
-selectLevels.value = levels
+import { allData } from '../store/store'
+const { data } = allData()
+selectLevels.value = data.length
+
+const handlePage = (evt: Event) => {
+    const select = evt.target
+
+    if (!(select instanceof HTMLSelectElement)) return
+
+    console.log(select.value)
+}
 </script>
 
 <style scoped>
