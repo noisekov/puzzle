@@ -16,7 +16,7 @@ export const allData = defineStore('data', {
 
 export const roundStore = defineStore('round', {
     state: () => ({
-        curRound: 0,
+        curRound: 1,
         allRounds: 0,
     }),
     getters: {
@@ -35,7 +35,7 @@ export const roundStore = defineStore('round', {
 
 export const levelStore = defineStore('level', {
     state: () => ({
-        curLevel: 0,
+        curLevel: 1,
         allLevels: 0,
     }),
     getters: {
