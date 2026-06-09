@@ -14,21 +14,21 @@ export const allData = defineStore('data', {
     },
 })
 
-export const pageStore = defineStore('page', {
+export const roundStore = defineStore('round', {
     state: () => ({
-        curPage: 0,
-        allPages: 0,
+        curRound: 0,
+        allRounds: 0,
     }),
     getters: {
-        getCurPage: (state) => state.curPage,
-        getAllPages: (state) => state.allPages,
+        getCurRound: (state) => state.curRound,
+        getAllRounds: (state) => state.allRounds,
     },
     actions: {
-        setCurPage(value: number) {
-            this.curPage = value
+        setCurRound(value: number) {
+            this.curRound = value
         },
-        setAllPages(value: number) {
-            this.allPages = value
+        setAllRounds(value: number) {
+            this.allRounds = value
         },
     },
 })

@@ -7,7 +7,7 @@ import { log } from '../utils/utils'
     <header class="header">
         <div class="selects">
             <Select name="Level" />
-            <Select name="Page" />
+            <Select name="Round" />
         </div>
         <div class="btns">
             <button

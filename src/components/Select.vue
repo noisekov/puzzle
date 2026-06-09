@@ -5,7 +5,7 @@
             :name="`${name}`"
             :id="`${name}-select`"
             :value="currentValue"
-            @change="handlePage($event, name)"
+            @change="selectHandler($event, name)"
         >
             <option v-for="option in optionsList" :value="option" :key="option">
                 {{ option }}
@@ -16,22 +16,22 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { allData, pageStore, levelStore } from '../store/store'
+import { allData, roundStore, levelStore } from '../store/store'
 import { getDataLevel } from '../utils/getDataLevel'
 
 const props = defineProps<{ name: string }>()
 const { data } = allData()
 
 const levelsStore = levelStore()
-const pagesStore = pageStore()
+const roundsStore = roundStore()
 
 const currentValue = computed(() => {
     if (props.name === 'Level') {
         return levelsStore.getCurLevel || 1
     }
 
-    if (props.name === 'Page') {
-        return pagesStore.getCurPage || 1
+    if (props.name === 'Round') {
+        return roundsStore.getCurRound || 1
     }
 
     return 1
@@ -42,13 +42,13 @@ const optionsList = computed(() => {
         return Array.from({ length: levelsStore.getAllLevels }, (_, i) => i + 1)
     }
 
-    if (props.name === 'Page') {
-        return Array.from({ length: pagesStore.getAllPages }, (_, i) => i + 1)
+    if (props.name === 'Round') {
+        return Array.from({ length: roundsStore.getAllRounds }, (_, i) => i + 1)
     }
 })
 
 onMounted(async () => {
-    const { page, level, allPages } = JSON.parse(
+    const { round, level, allRounds } = JSON.parse(
         localStorage.getItem('puzzle_noisekov') || '{}'
     )
 
@@ -60,28 +60,28 @@ onMounted(async () => {
         levelsStore.setAllLevels(data.length)
     }
 
-    if (props.name === 'Page') {
-        if (page) {
-            pagesStore.setCurPage(page)
-            pagesStore.setAllPages(allPages)
+    if (props.name === 'Round') {
+        if (round) {
+            roundsStore.setCurRound(round)
+            roundsStore.setAllRounds(allRounds)
 
             return
         }
 
-        const pageData = await fetch(data[0].download_url)
-        const { roundsCount } = await pageData.json()
+        const roundData = await fetch(data[0].download_url)
+        const { roundsCount } = await roundData.json()
 
-        pagesStore.setAllPages(+roundsCount)
+        roundsStore.setAllRounds(+roundsCount)
     }
 })
 
-const handlePage = async (evt: Event, name: string) => {
+const selectHandler = async (evt: Event, name: string) => {
     const select = evt.target
 
     if (!(select instanceof HTMLSelectElement)) return
 
     if (name === 'Level') {
-        const PAGE_ONE_IF_CHANGE_LEVEL = 1
+        const ROUND_ONE_IF_CHANGE_LEVEL = 1
         const { download_url: urlAboutLevel } = await getDataLevel(select.value)
         const levelData = await fetch(urlAboutLevel)
         const { roundsCount } = await levelData.json()
@@ -92,19 +92,19 @@ const handlePage = async (evt: Event, name: string) => {
                     JSON.parse(localStorage.getItem('puzzle_noisekov') || '{}'),
                     {
                         level: select.value,
-                        page: PAGE_ONE_IF_CHANGE_LEVEL,
-                        allPages: roundsCount,
+                        round: ROUND_ONE_IF_CHANGE_LEVEL,
+                        allRounds: roundsCount,
                     }
                 )
             )
         )
 
         levelStore().setCurLevel(+select.value)
-        pageStore().setAllPages(+roundsCount)
-        pageStore().setCurPage(PAGE_ONE_IF_CHANGE_LEVEL)
+        roundStore().setAllRounds(+roundsCount)
+        roundStore().setCurRound(ROUND_ONE_IF_CHANGE_LEVEL)
     }
 
-    if (name === 'Page') {
+    if (name === 'Round') {
         const { download_url: urlAboutLevel } = await getDataLevel(
             String(levelStore().getCurLevel)
         )
@@ -117,14 +117,14 @@ const handlePage = async (evt: Event, name: string) => {
                     JSON.parse(localStorage.getItem('puzzle_noisekov') || '{}'),
                     {
                         level: levelStore().getCurLevel,
-                        page: select.value,
-                        allPages: roundsCount,
+                        round: select.value,
+                        allRounds: roundsCount,
                     }
                 )
             )
         )
 
-        pageStore().setCurPage(+select.value)
+        roundStore().setCurRound(+select.value)
     }
 }
 </script>
