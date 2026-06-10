@@ -1,16 +1,25 @@
 <script lang="ts" setup>
 import HeaderGamePage from '../components/HeaderGamePage.vue'
 import { log } from '../utils/utils'
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
-import { allData, roundDataStore } from '../store/store'
+import {
+    allData,
+    roundDataStore,
+    roundStore,
+    wordsCurRound,
+    sentenceCurGuess,
+} from '../store/store'
 
 const loading = ref(false)
 const error = ref(null)
 const levels = ref(null)
 const mainData = allData()
 const roundData = roundDataStore()
+const roundNumber = roundStore()
+const wordsStore = wordsCurRound()
+const sentenceGuess = sentenceCurGuess()
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
@@ -41,13 +50,25 @@ watch(
     () => roundData.getRoundData,
     (roundData) => {
         if (roundData) {
-            console.log(
-                `данные содержащие инфу о всех раундах в текущем левеле`
-            )
-            console.log(roundData)
+            const { rounds } = roundData
+            const numberOfRounds = roundNumber.getCurRound - 1
+            const { levelData, words } = rounds[numberOfRounds]
+            wordsStore.setWords(words)
+            sentenceGuess.setSentenceRu(words[0].textExampleTranslate)
+            sentenceGuess.setSentenceEn(words[0].textExample)
+            console.log(levelData)
+            console.log(words)
         }
     }
 )
+
+const sentenceMixed = computed(() => {
+    const sentenceEn = sentenceGuess.getSentenceEn
+
+    if (!sentenceEn) return []
+
+    return sentenceEn.split(' ').sort(() => Math.random() - 0.5)
+})
 </script>
 
 <template>
@@ -63,27 +84,33 @@ watch(
                     @click="log('play_translate')"
                 ></button>
                 <p class="translate__text">
-                    Женщина любит кататься на велосипеде
+                    {{ sentenceGuess.getSentenceRu }}
                 </p>
             </div>
-            <div class="game"></div>
-            <div class="answer">
-                <div class="sentence"></div>
-                <div class="picture-name">Айвазовский</div>
+            <div class="game">
+                <div class="answer">
+                    <span
+                        v-for="word in sentenceMixed"
+                        :key="word"
+                        class="puzzle"
+                    >
+                        {{ word }}
+                    </span>
+                </div>
             </div>
             <div class="btns">
                 <button type="button" class="btn" @click="log(`I don't know`)">
                     I don't know
                 </button>
-                <button type="button" class="btn" @click="log('Check')">
+                <!-- <button type="button" class="btn" @click="log('Check')">
                     Check
-                </button>
-                <button type="button" class="btn" @click="log('Continue')">
+                </button> -->
+                <!-- <button type="button" class="btn" @click="log('Continue')">
                     Continue
                 </button>
                 <button type="button" class="btn" @click="log('Results')">
                     Results
-                </button>
+                </button> -->
             </div>
         </div>
     </div>
@@ -98,6 +125,10 @@ watch(
     width: 100%;
     height: 100vh;
     background-color: #fff;
+}
+
+.game {
+    width: 100%;
 }
 
 .wrapper {
@@ -161,12 +192,49 @@ watch(
 
 .answer {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 0.5rem 0;
     border: 1px solid #fff;
     box-shadow: #fff 0px 0px 5px 0px;
     width: 100%;
     margin: 0 0 0.5rem 0;
+}
+
+.puzzle {
+    position: relative;
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    background: #ffc107;
+    cursor: pointer;
+    user-select: none;
+    margin: 0 1px 0 0;
+    color: black;
+}
+.puzzle::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: #333;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.puzzle::after {
+    content: '';
+    position: absolute;
+    right: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    background: #ffc107;
+    border-radius: 50%;
+    z-index: 2;
 }
 </style>

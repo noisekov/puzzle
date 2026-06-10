@@ -65,3 +65,36 @@ export const roundDataStore = defineStore('roundData', {
         },
     },
 })
+
+export const wordsCurRound = defineStore('wordsCurRound', {
+    state: () => ({
+        words: [{}],
+    }),
+    getters: {
+        getWords: (state) => state.words,
+    },
+    actions: {
+        setWords(value: Array<object>) {
+            this.words = value
+        },
+    },
+})
+
+export const sentenceCurGuess = defineStore('sentenceCurGuess', {
+    state: () => ({
+        sentenceRu: '',
+        sentenceEn: '',
+    }),
+    getters: {
+        getSentenceRu: (state) => state.sentenceRu,
+        getSentenceEn: (state) => state.sentenceEn,
+    },
+    actions: {
+        setSentenceRu(value: string) {
+            this.sentenceRu = value
+        },
+        setSentenceEn(value: string) {
+            this.sentenceEn = value
+        },
+    },
+})
