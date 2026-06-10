@@ -51,3 +51,17 @@ export const levelStore = defineStore('level', {
         },
     },
 })
+
+export const roundDataStore = defineStore('roundData', {
+    state: () => ({
+        roundData: {},
+    }),
+    getters: {
+        getRoundData: (state) => state.roundData,
+    },
+    actions: {
+        setRoundData(value: { rounds: Array<object>; roundsCount: number }) {
+            this.roundData = value
+        },
+    },
+})

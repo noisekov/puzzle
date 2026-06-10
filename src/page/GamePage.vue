@@ -4,12 +4,13 @@ import { log } from '../utils/utils'
 import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
-import { allData } from '../store/store'
+import { allData, roundDataStore } from '../store/store'
 
 const loading = ref(false)
 const error = ref(null)
 const levels = ref(null)
 const mainData = allData()
+const roundData = roundDataStore()
 
 watch(() => route.params.id, fetchData, { immediate: true })
 
@@ -28,9 +29,6 @@ async function fetchData() {
         )
         const data = await response.json()
         mainData.setData(data)
-        // data.forEach((element) => {
-        //     console.log(element.download_url)
-        // })
         levels.value = data.length
     } catch (err) {
         error.value = err.toString()
@@ -38,6 +36,18 @@ async function fetchData() {
         loading.value = false
     }
 }
+
+watch(
+    () => roundData.getRoundData,
+    (roundData) => {
+        if (roundData) {
+            console.log(
+                `данные содержащие инфу о всех раундах в текущем левеле`
+            )
+            console.log(roundData)
+        }
+    }
+)
 </script>
 
 <template>

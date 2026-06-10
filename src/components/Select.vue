@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from 'vue'
-import { allData, roundStore, levelStore } from '../store/store'
+import { allData, roundStore, levelStore, roundDataStore } from '../store/store'
 import { getDataLevel } from '../utils/getDataLevel'
 
 const props = defineProps<{ name: string }>()
@@ -24,6 +24,7 @@ const { data } = allData()
 
 const levelsStore = levelStore()
 const roundsStore = roundStore()
+const roundData = roundDataStore()
 
 const currentValue = computed(() => {
     if (props.name === 'Level') {
@@ -57,6 +58,10 @@ onMounted(async () => {
             levelsStore.setCurLevel(level)
         }
 
+        const { download_url: urlAboutLevel } = await getDataLevel(level || 1)
+        const levelData = await fetch(urlAboutLevel)
+        roundData.setRoundData(await levelData.json())
+
         levelsStore.setAllLevels(data.length)
     }
 
@@ -84,7 +89,8 @@ const selectHandler = async (evt: Event, name: string) => {
         const ROUND_ONE_IF_CHANGE_LEVEL = 1
         const { download_url: urlAboutLevel } = await getDataLevel(select.value)
         const levelData = await fetch(urlAboutLevel)
-        const { roundsCount } = await levelData.json()
+        const responseLevelData = await levelData.json()
+        roundData.setRoundData(responseLevelData)
         localStorage.setItem(
             'puzzle_noisekov',
             JSON.stringify(
@@ -93,14 +99,14 @@ const selectHandler = async (evt: Event, name: string) => {
                     {
                         level: select.value,
                         round: ROUND_ONE_IF_CHANGE_LEVEL,
-                        allRounds: roundsCount,
+                        allRounds: responseLevelData.roundsCount,
                     }
                 )
             )
         )
 
         levelStore().setCurLevel(+select.value)
-        roundStore().setAllRounds(+roundsCount)
+        roundStore().setAllRounds(+responseLevelData.roundsCount)
         roundStore().setCurRound(ROUND_ONE_IF_CHANGE_LEVEL)
     }
 
