@@ -98,3 +98,17 @@ export const sentenceCurGuess = defineStore('sentenceCurGuess', {
         },
     },
 })
+
+export const image = defineStore('image', {
+    state: () => ({
+        imageCut: '',
+    }),
+    getters: {
+        getImageCut: (state) => state.imageCut,
+    },
+    actions: {
+        setImageCut(value: string) {
+            this.imageCut = value
+        },
+    },
+})
