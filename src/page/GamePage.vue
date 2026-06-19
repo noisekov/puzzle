@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import HeaderGamePage from '../components/HeaderGamePage.vue'
 import { log } from '../utils/utils'
-import { computed, ref, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 import {
@@ -12,6 +12,7 @@ import {
     sentenceCurGuess,
     image,
     levelStore,
+    dragWord,
 } from '../store/store'
 
 const loading = ref(false)
@@ -24,6 +25,7 @@ const wordsStore = wordsCurRound()
 const sentenceGuess = sentenceCurGuess()
 const imageStore = image()
 const curLevelStore = levelStore()
+const dragWordStore = dragWord()
 const TOKEN = import.meta.env.VITE_GITHUB_TOKEN
 
 watch(() => route.params.id, fetchData, { immediate: true })
@@ -50,6 +52,8 @@ async function fetchData() {
     }
 }
 
+const mixedWords = ref<string[]>([])
+
 watch(
     [() => roundData.getRoundData, () => roundNumber.getCurRound],
     async ([roundData, roundStore]) => {
@@ -60,6 +64,8 @@ watch(
             wordsStore.setWords(words)
             sentenceGuess.setSentenceRu(words[0].textExampleTranslate)
             sentenceGuess.setSentenceEn(words[0].textExample)
+            const wordsArray = words[0].textExample.split(' ')
+            mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
             console.log(levelData)
             console.log(words)
 
@@ -80,17 +86,39 @@ watch(
     }
 )
 
-const sentenceMixed = computed(() => {
-    const sentenceEn = sentenceGuess.getSentenceEn
+const isDragging = ref(false)
 
-    if (!sentenceEn) return []
+const onDragStart = (evt, word: string, idx: number) => {
+    isDragging.value = true
+    dragWordStore.setDragWord({ word, idx })
+}
+const handleDrop = (evt) => {
+    isDragging.value = false
 
-    return sentenceEn.split(' ').sort(() => Math.random() - 0.5)
-})
+    if (evt.target.closest('.image-answers')) {
+        const index = dragWordStore.getDragIndex
+
+        if (index !== -1) {
+            mixedWords.value.splice(index, 1)
+        }
+
+        answerFields.value[0]?.push(dragWordStore.getDragWord)
+        // console.log(answerFields.value[0])
+    }
+}
+
+const onDragOver = (evt) => {
+    // console.log(evt)
+}
+const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
 </script>
 
 <template>
-    <div class="container">
+    <div
+        class="container"
+        @drop="handleDrop($event)"
+        @dragover.prevent="onDragOver($event)"
+    >
         <div v-if="loading" class="loading">Loading...</div>
         <div v-if="error" class="error">{{ error }}</div>
         <div class="wrapper" v-if="levels">
@@ -113,25 +141,28 @@ const sentenceMixed = computed(() => {
                         class="image-cut"
                     />
                     <div class="image-answers">
-                        <!-- Удалить -->
-                        <div class="image-answer answered"></div>
-                        <div class="image-answer answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <div class="image-answer not-answered"></div>
-                        <!-- Удалить -->
+                        <div
+                            v-for="(row, rowIndex) in answerFields"
+                            :class="{ dragging: isDragging }"
+                            :key="rowIndex"
+                            class="image-answer"
+                        >
+                            <span
+                                v-for="answeredSentence in row"
+                                :key="answeredSentence"
+                                class="puzzle"
+                                >{{ answeredSentence }}</span
+                            >
+                        </div>
                     </div>
                 </div>
                 <div class="answer">
                     <span
-                        v-for="word in sentenceMixed"
+                        v-for="(word, idx) in mixedWords"
                         :key="word"
                         class="puzzle"
+                        draggable="true"
+                        @dragstart="onDragStart($event, word, idx)"
                     >
                         {{ word }}
                     </span>
@@ -166,6 +197,10 @@ const sentenceMixed = computed(() => {
     background-color: #fff;
 }
 
+.image-answer.dragging {
+    box-shadow: #fff 0px 0px 7px 0px;
+}
+
 .game {
     width: 100%;
 }
@@ -187,6 +222,8 @@ const sentenceMixed = computed(() => {
 
 .image-answer {
     position: relative;
+    display: flex;
+    flex-direction: row;
     height: 40px;
     background-color: #333;
     z-index: 3;
@@ -262,6 +299,7 @@ const sentenceMixed = computed(() => {
     box-shadow: #fff 0px 0px 5px 0px;
     width: 100%;
     margin: 0 0 0.5rem 0;
+    height: 40px;
 }
 
 .puzzle {

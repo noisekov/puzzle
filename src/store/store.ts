@@ -112,3 +112,21 @@ export const image = defineStore('image', {
         },
     },
 })
+
+export const dragWord = defineStore('dragWord', {
+    state: () => ({
+        drag: {
+            word: '',
+            idx: 0,
+        },
+    }),
+    getters: {
+        getDragWord: (state) => state.drag.word,
+        getDragIndex: (state) => state.drag.idx,
+    },
+    actions: {
+        setDragWord(value: { word: string; idx: number }) {
+            this.drag = value
+        },
+    },
+})
