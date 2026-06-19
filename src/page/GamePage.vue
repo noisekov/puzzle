@@ -51,9 +51,9 @@ async function fetchData() {
 }
 
 watch(
-    () => roundData.getRoundData,
-    async (roundData) => {
-        if (roundData) {
+    [() => roundData.getRoundData, () => roundNumber.getCurRound],
+    async ([roundData, roundStore]) => {
+        if (roundData || roundStore) {
             const { rounds } = roundData
             const numberOfRounds = roundNumber.getCurRound - 1
             const { levelData, words } = rounds[numberOfRounds]
