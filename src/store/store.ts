@@ -130,3 +130,21 @@ export const dragWord = defineStore('dragWord', {
         },
     },
 })
+
+export const roundCurWordNeedGuessIdx = defineStore(
+    'roundCurWordNeedGuessIdx',
+    {
+        state: () => ({
+            roundCurWordNeedGuessIdx: 0,
+        }),
+        getters: {
+            getRoundCurWordNeedGuessIdx: (state) =>
+                state.roundCurWordNeedGuessIdx,
+        },
+        actions: {
+            setRoundCurWordNeedGuessIdx(value: number) {
+                this.roundCurWordNeedGuessIdx = value
+            },
+        },
+    }
+)

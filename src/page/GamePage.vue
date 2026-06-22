@@ -13,6 +13,7 @@ import {
     image,
     levelStore,
     dragWord,
+    roundCurWordNeedGuessIdx,
 } from '../store/store'
 
 const loading = ref(false)
@@ -26,6 +27,7 @@ const sentenceGuess = sentenceCurGuess()
 const imageStore = image()
 const curLevelStore = levelStore()
 const dragWordStore = dragWord()
+const roundCurWordNeedGuessIdxStore = roundCurWordNeedGuessIdx()
 const TOKEN = import.meta.env.VITE_GITHUB_TOKEN
 
 watch(() => route.params.id, fetchData, { immediate: true })
@@ -62,10 +64,25 @@ watch(
             const numberOfRounds = roundNumber.getCurRound - 1
             const { levelData, words } = rounds[numberOfRounds]
             wordsStore.setWords(words)
-            sentenceGuess.setSentenceRu(words[0].textExampleTranslate)
-            sentenceGuess.setSentenceEn(words[0].textExample)
-            const wordsArray = words[0].textExample.split(' ')
+            sentenceGuess.setSentenceRu(
+                words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+                    .textExampleTranslate
+            )
+            sentenceGuess.setSentenceEn(
+                words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+                    .textExample
+            )
+            const wordsArray =
+                words[
+                    roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+                ].textExample.split(' ')
             mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
+
+            answerFields.value = words.map((wordObj) => {
+                const wordCount = wordObj.textExample.split(' ').length
+                return Array(wordCount).fill(null)
+            })
+
             console.log(levelData)
             console.log(words)
 
@@ -82,11 +99,21 @@ watch(
                 (item) => item.path === `images/${levelData.cutSrc}`
             )
             imageStore.setImageCut(imageSrc)
+            showBtnCheck.value = false
+            roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+            proposalCollectedRows.value = Array.from(
+                { length: 10 },
+                () => false
+            )
         }
     }
 )
 
 const isDragging = ref(false)
+const proposalCollectedRows = ref<boolean[]>(
+    Array.from({ length: 10 }, () => false)
+)
+const showBtnCheck = ref(false)
 
 const onDragStart = (evt, word: string, idx: number) => {
     isDragging.value = true
@@ -102,15 +129,68 @@ const handleDrop = (evt) => {
             mixedWords.value.splice(index, 1)
         }
 
-        answerFields.value[0]?.push(dragWordStore.getDragWord)
-        // console.log(answerFields.value[0])
+        const currentIdx =
+            roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+        const currentRow = answerFields.value[currentIdx]
+        const firstEmpty = currentRow?.indexOf(null)
+
+        if (currentRow && typeof firstEmpty === 'number' && firstEmpty !== -1) {
+            currentRow[firstEmpty] = dragWordStore.getDragWord
+        }
+
+        if (currentRow && !currentRow.includes(null)) {
+            proposalCollectedRows.value[currentIdx] = true
+            showBtnCheck.value = true
+        }
     }
 }
 
 const onDragOver = (evt) => {
     // console.log(evt)
 }
-const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
+const answerFields = ref<(string | null)[][]>([])
+
+const checkAnswer = () => {
+    const answerArr =
+        answerFields.value[
+            roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+        ]
+    const rightAnswer = sentenceGuess.getSentenceEn.split(' ')
+
+    if (answerArr?.join(' ') === rightAnswer.join(' ')) {
+        console.log('true')
+    } else {
+        console.log('false')
+    }
+
+    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(
+        roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx + 1
+    )
+    showBtnCheck.value = false
+}
+
+watch(
+    () => roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx,
+    () => {
+        const { rounds } = roundData.getRoundData
+        const numberOfRounds = roundNumber.getCurRound - 1
+        const { words } = rounds[numberOfRounds]
+        wordsStore.setWords(words)
+        sentenceGuess.setSentenceRu(
+            words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+                .textExampleTranslate
+        )
+        sentenceGuess.setSentenceEn(
+            words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+                .textExample
+        )
+        const wordsArray =
+            words[
+                roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+            ].textExample.split(' ')
+        mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
+    }
+)
 </script>
 
 <template>
@@ -124,11 +204,7 @@ const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
         <div class="wrapper" v-if="levels">
             <HeaderGamePage />
             <div class="translate">
-                <button
-                    type="button"
-                    class="translate__btn"
-                    @click="log('play_translate')"
-                ></button>
+                <button type="button" class="translate__btn"></button>
                 <p class="translate__text">
                     {{ sentenceGuess.getSentenceRu }}
                 </p>
@@ -143,15 +219,22 @@ const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
                     <div class="image-answers">
                         <div
                             v-for="(row, rowIndex) in answerFields"
-                            :class="{ dragging: isDragging }"
+                            :class="{
+                                dragging: isDragging,
+                                answered: proposalCollectedRows[rowIndex],
+                            }"
                             :key="rowIndex"
                             class="image-answer"
                         >
                             <span
-                                v-for="answeredSentence in row"
-                                :key="answeredSentence"
+                                v-for="(slot, slotIdx) in row"
+                                :key="slotIdx"
                                 class="puzzle"
-                                >{{ answeredSentence }}</span
+                                :class="{
+                                    'puzzle--empty': slot === null,
+                                    'puzzle--filled': slot !== null,
+                                }"
+                                >{{ slot }}</span
                             >
                         </div>
                     </div>
@@ -172,9 +255,14 @@ const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
                 <button type="button" class="btn" @click="log(`I don't know`)">
                     I don't know
                 </button>
-                <!-- <button type="button" class="btn" @click="log('Check')">
+                <button
+                    v-if="showBtnCheck"
+                    type="button"
+                    class="btn"
+                    @click="checkAnswer()"
+                >
                     Check
-                </button> -->
+                </button>
                 <!-- <button type="button" class="btn" @click="log('Continue')">
                     Continue
                 </button>
@@ -230,7 +318,34 @@ const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
 }
 
 .image-answer.answered {
-    z-index: 1;
+    background: transparent;
+}
+
+.image-answer.answered .puzzle {
+    background: transparent;
+    color: #fff;
+    text-shadow:
+        1px 1px 3px rgba(0, 0, 0, 0.9),
+        0 0 5px rgba(0, 0, 0, 0.5);
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.image-answer.answered .puzzle::before {
+    content: none;
+}
+
+.image-answer.answered .puzzle::after {
+    border-radius: 0 50% 50% 0;
+    background: rgba(255, 255, 255, 0.4);
+    right: -16px;
+}
+
+.image-answer.answered .puzzle:first-child::before {
+    background: transparent;
+}
+
+.image-answer.answered .puzzle:last-child::after {
+    background: transparent;
 }
 
 .wrapper {
@@ -315,6 +430,59 @@ const answerFields = ref<string[][]>(Array.from({ length: 10 }, () => []))
     margin: 0 1px 0 0;
     color: black;
 }
+
+.image-answer .puzzle--empty {
+    &::before {
+        content: none;
+    }
+    &::after {
+        content: none;
+    }
+}
+
+.puzzle--filled {
+    background: #ffc107;
+    cursor: pointer;
+
+    &::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background: #333;
+        border-radius: 50%;
+        z-index: 1;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background: #ffc107;
+        border-radius: 50%;
+        z-index: 2;
+    }
+}
+
+.puzzle--empty {
+    background: none;
+    box-shadow: none;
+    color: transparent;
+    pointer-events: none;
+
+    &::before,
+    &::after {
+        content: none;
+    }
+}
+
 .puzzle::before {
     content: '';
     position: absolute;
