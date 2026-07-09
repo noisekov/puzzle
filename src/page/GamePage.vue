@@ -60,6 +60,8 @@ watch(
     [() => roundData.getRoundData, () => roundNumber.getCurRound],
     async ([roundData, roundStore]) => {
         if (roundData || roundStore) {
+            roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+
             const { rounds } = roundData
             const numberOfRounds = roundNumber.getCurRound - 1
             const { levelData, words } = rounds[numberOfRounds]
@@ -98,9 +100,16 @@ watch(
             const { download_url: imageSrc } = dataImg.find(
                 (item) => item.path === `images/${levelData.cutSrc}`
             )
-            imageStore.setImageCut(imageSrc)
+            imageStore.setSrc(imageSrc)
+            imageStore.setName(levelData.imageSrc)
+            imageStore.setNameAuthorYear(`${levelData.author} - ${levelData.name} (${levelData.year})`)
             showBtnCheck.value = false
-            roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+            showBtnContinue.value = false
+            showBtnResults.value = false
+            showBtnIDontKnow.value = true
+            showPuzzleBlock.value = true
+            answerPictureName.value = false
+            answerPuzzle.value = true
             proposalCollectedRows.value = Array.from(
                 { length: 10 },
                 () => false
@@ -114,6 +123,12 @@ const proposalCollectedRows = ref<boolean[]>(
     Array.from({ length: 10 }, () => false)
 )
 const showBtnCheck = ref(false)
+const showBtnIDontKnow = ref(false)
+const showBtnContinue = ref(false)
+const showBtnResults = ref(false)
+const showPuzzleBlock = ref(true)
+const answerPictureName = ref(false)
+const answerPuzzle = ref(true)
 
 const onDragStart = (evt, word: string, idx: number) => {
     isDragging.value = true
@@ -141,6 +156,7 @@ const handleDrop = (evt) => {
         if (currentRow && !currentRow.includes(null)) {
             proposalCollectedRows.value[currentIdx] = true
             showBtnCheck.value = true
+            showBtnIDontKnow.value = false
         }
     }
 }
@@ -167,11 +183,57 @@ const checkAnswer = () => {
         roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx + 1
     )
     showBtnCheck.value = false
+    showBtnIDontKnow.value = true
+}
+
+const iDontKnowHandler = () => {
+    const currentIdx = roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+    const answerArr =
+    answerFields.value[
+        currentIdx
+    ]
+    const rightAnswer = sentenceGuess.getSentenceEn.split(' ')
+    answerArr?.splice(0)
+    answerArr?.push(...rightAnswer)
+    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(
+        currentIdx + 1
+    )
+    showBtnCheck.value = false
+    proposalCollectedRows.value[currentIdx] = true
 }
 
 watch(
     () => roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx,
-    () => {
+    async () => {
+        const LAST_LEVEL = 10
+        
+        if (roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx === LAST_LEVEL) {
+            showBtnIDontKnow.value = false
+            showBtnContinue.value = true
+            showBtnResults.value = true
+
+             const responseImg = await fetch(
+                `https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/images/level${curLevelStore.getCurLevel}/`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${TOKEN}`,
+                    },
+                }
+            )
+            const dataImg = await responseImg.json()
+            const { download_url: imageSrc } = dataImg.find(
+                (item) => item.path === `images/${imageStore.getName}`
+            )
+            imageStore.setSrc(imageSrc)
+            showPuzzleBlock.value = false
+            answerPictureName.value = true
+            answerPuzzle.value = false
+
+            return
+        }
+
+        answerPictureName.value = false
+        answerPuzzle.value = true
         const { rounds } = roundData.getRoundData
         const numberOfRounds = roundNumber.getCurRound - 1
         const { words } = rounds[numberOfRounds]
@@ -212,11 +274,11 @@ watch(
             <div class="game">
                 <div class="image">
                     <img
-                        :src="`${imageStore.getImageCut}`"
+                        :src="`${imageStore.getSrc}`"
                         alt="image"
                         class="image-cut"
                     />
-                    <div class="image-answers">
+                    <div class="image-answers" v-if="showPuzzleBlock">
                         <div
                             v-for="(row, rowIndex) in answerFields"
                             :class="{
@@ -241,6 +303,7 @@ watch(
                 </div>
                 <div class="answer">
                     <span
+                        v-if="answerPuzzle"
                         v-for="(word, idx) in mixedWords"
                         :key="word"
                         class="puzzle"
@@ -249,10 +312,11 @@ watch(
                     >
                         {{ word }}
                     </span>
+                    <span v-if="answerPictureName">{{ imageStore.getNameAuthorYear }}</span>
                 </div>
             </div>
             <div class="btns">
-                <button type="button" class="btn" @click="log(`I don't know`)">
+                <button v-if="showBtnIDontKnow" type="button" class="btn" @click="iDontKnowHandler()">
                     I don't know
                 </button>
                 <button
@@ -263,12 +327,12 @@ watch(
                 >
                     Check
                 </button>
-                <!-- <button type="button" class="btn" @click="log('Continue')">
+                <button v-if="showBtnContinue" type="button" class="btn" @click="log('Continue')">
                     Continue
                 </button>
-                <button type="button" class="btn" @click="log('Results')">
+                <button v-if="showBtnResults" type="button" class="btn" @click="log('Results')">
                     Results
-                </button> -->
+                </button>
             </div>
         </div>
     </div>
@@ -410,6 +474,7 @@ watch(
 .answer {
     display: flex;
     align-items: center;
+    justify-content: center;
     border: 1px solid #fff;
     box-shadow: #fff 0px 0px 5px 0px;
     width: 100%;
