@@ -15,9 +15,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { allData, roundStore, levelStore, roundDataStore } from '../store/store'
-import { getDataLevel } from '../utils/getDataLevel'
+import { computed, onMounted } from "vue"
+import { allData, roundStore, levelStore, roundDataStore } from "../store/store"
+import { getDataLevel } from "../utils/getDataLevel"
+import { updateLevel, updateSound } from "../utils/utils"
 
 const props = defineProps<{ name: string }>()
 const { data } = allData()
@@ -27,11 +28,11 @@ const roundsStore = roundStore()
 const roundData = roundDataStore()
 
 const currentValue = computed(() => {
-    if (props.name === 'Level') {
+    if (props.name === "Level") {
         return levelsStore.getCurLevel || 1
     }
 
-    if (props.name === 'Round') {
+    if (props.name === "Round") {
         return roundsStore.getCurRound || 1
     }
 
@@ -39,21 +40,19 @@ const currentValue = computed(() => {
 })
 
 const optionsList = computed(() => {
-    if (props.name === 'Level') {
+    if (props.name === "Level") {
         return Array.from({ length: levelsStore.getAllLevels }, (_, i) => i + 1)
     }
 
-    if (props.name === 'Round') {
+    if (props.name === "Round") {
         return Array.from({ length: roundsStore.getAllRounds }, (_, i) => i + 1)
     }
 })
 
 onMounted(async () => {
-    const { round, level, allRounds } = JSON.parse(
-        localStorage.getItem('puzzle_noisekov') || '{}'
-    )
+    const { round, level, allRounds } = JSON.parse(localStorage.getItem("puzzle_noisekov") || "{}")
 
-    if (props.name === 'Level') {
+    if (props.name === "Level") {
         if (level) {
             levelsStore.setCurLevel(level)
         }
@@ -65,7 +64,7 @@ onMounted(async () => {
         levelsStore.setAllLevels(data.length)
     }
 
-    if (props.name === 'Round') {
+    if (props.name === "Round") {
         if (round) {
             roundsStore.setCurRound(round)
             roundsStore.setAllRounds(allRounds)
@@ -85,51 +84,28 @@ const selectHandler = async (evt: Event, name: string) => {
 
     if (!(select instanceof HTMLSelectElement)) return
 
-    if (name === 'Level') {
-        const ROUND_ONE_IF_CHANGE_LEVEL = 1
-        const { download_url: urlAboutLevel } = await getDataLevel(select.value)
-        const levelData = await fetch(urlAboutLevel)
-        const responseLevelData = await levelData.json()
-        roundData.setRoundData(responseLevelData)
-        localStorage.setItem(
-            'puzzle_noisekov',
-            JSON.stringify(
-                Object.assign(
-                    JSON.parse(localStorage.getItem('puzzle_noisekov') || '{}'),
-                    {
-                        level: select.value,
-                        round: ROUND_ONE_IF_CHANGE_LEVEL,
-                        allRounds: responseLevelData.roundsCount,
-                    }
-                )
-            )
-        )
-
-        levelStore().setCurLevel(+select.value)
-        roundStore().setAllRounds(+responseLevelData.roundsCount)
-        roundStore().setCurRound(ROUND_ONE_IF_CHANGE_LEVEL)
+    if (name === "Level") {
+        updateLevel(select.value)
     }
 
-    if (name === 'Round') {
-        const { download_url: urlAboutLevel } = await getDataLevel(
-            String(levelStore().getCurLevel)
-        )
+    if (name === "Round") {
+        const { download_url: urlAboutLevel } = await getDataLevel(String(levelStore().getCurLevel))
         const levelData = await fetch(urlAboutLevel)
-        const { roundsCount } = await levelData.json()
+        const { roundsCount, rounds } = await levelData.json()
         localStorage.setItem(
-            'puzzle_noisekov',
+            "puzzle_noisekov",
             JSON.stringify(
-                Object.assign(
-                    JSON.parse(localStorage.getItem('puzzle_noisekov') || '{}'),
-                    {
-                        level: levelStore().getCurLevel,
-                        round: select.value,
-                        allRounds: roundsCount,
-                    }
-                )
+                Object.assign(JSON.parse(localStorage.getItem("puzzle_noisekov") || "{}"), {
+                    level: levelStore().getCurLevel,
+                    round: select.value,
+                    allRounds: roundsCount
+                })
             )
         )
-
+        const {
+            words: [{ audioExample }]
+        } = rounds[+select.value - 1]
+        updateSound(audioExample)
         roundStore().setCurRound(+select.value)
     }
 }

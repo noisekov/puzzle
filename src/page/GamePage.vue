@@ -1,20 +1,10 @@
 <script lang="ts" setup>
-import HeaderGamePage from '../components/HeaderGamePage.vue'
-import { log } from '../utils/utils'
-import { ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import HeaderGamePage from "../components/HeaderGamePage.vue"
+import { log, updateLevel, updateSound } from "../utils/utils"
+import { ref, watch } from "vue"
+import { useRoute } from "vue-router"
 const route = useRoute()
-import {
-    allData,
-    roundDataStore,
-    roundStore,
-    wordsCurRound,
-    sentenceCurGuess,
-    image,
-    levelStore,
-    dragWord,
-    roundCurWordNeedGuessIdx,
-} from '../store/store'
+import { allData, roundDataStore, roundStore, wordsCurRound, sentenceCurGuess, image, levelStore, dragWord, roundCurWordNeedGuessIdx } from "../store/store"
 
 const loading = ref(false)
 const error = ref(null)
@@ -36,14 +26,16 @@ async function fetchData() {
     error.value = levels.value = null
     loading.value = true
     try {
-        const response = await fetch(
-            `https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/data/`,
-            {
-                headers: {
-                    Authorization: `Bearer ${TOKEN}`,
-                },
+        const response = await fetch(`https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/data/`, {
+            headers: {
+                Authorization: `Bearer ${TOKEN}`
             }
-        )
+        })
+
+        if (!response.ok) {
+            throw new Error(`Ошибка API: ${response.status} ${response.statusText}`)
+        }
+
         const data = await response.json()
         mainData.setData(data)
         levels.value = data.length
@@ -56,72 +48,52 @@ async function fetchData() {
 
 const mixedWords = ref<string[]>([])
 
-watch(
-    [() => roundData.getRoundData, () => roundNumber.getCurRound],
-    async ([roundData, roundStore]) => {
-        if (roundData || roundStore) {
-            roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+watch([() => roundData.getRoundData, () => roundNumber.getCurRound], async ([roundData, roundStore]) => {
+    if (roundData || roundStore) {
+        roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
 
-            const { rounds } = roundData
-            const numberOfRounds = roundNumber.getCurRound - 1
-            const { levelData, words } = rounds[numberOfRounds]
-            wordsStore.setWords(words)
-            sentenceGuess.setSentenceRu(
-                words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
-                    .textExampleTranslate
-            )
-            sentenceGuess.setSentenceEn(
-                words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
-                    .textExample
-            )
-            const wordsArray =
-                words[
-                    roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
-                ].textExample.split(' ')
-            mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
+        const { rounds } = roundData
+        const numberOfRounds = roundNumber.getCurRound - 1
+        const { levelData, words } = rounds[numberOfRounds]
+        wordsStore.setWords(words)
+        const { textExampleTranslate, textExample, audioExample } = words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+        sentenceGuess.setSentenceRu(textExampleTranslate)
+        sentenceGuess.setSentenceEn(textExample)
+        updateSound(audioExample)
+        const wordsArray = textExample.split(" ")
+        mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
 
-            answerFields.value = words.map((wordObj) => {
-                const wordCount = wordObj.textExample.split(' ').length
-                return Array(wordCount).fill(null)
-            })
+        answerFields.value = words.map(wordObj => {
+            const wordCount = wordObj.textExample.split(" ").length
+            return Array(wordCount).fill(null)
+        })
 
-            console.log(levelData)
-            console.log(words)
-
-            const responseImg = await fetch(
-                `https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/images/level${curLevelStore.getCurLevel}/cut/`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${TOKEN}`,
-                    },
+        const responseImg = await fetch(
+            `https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/images/level${curLevelStore.getCurLevel}/cut/`,
+            {
+                headers: {
+                    Authorization: `Bearer ${TOKEN}`
                 }
-            )
-            const dataImg = await responseImg.json()
-            const { download_url: imageSrc } = dataImg.find(
-                (item) => item.path === `images/${levelData.cutSrc}`
-            )
-            imageStore.setSrc(imageSrc)
-            imageStore.setName(levelData.imageSrc)
-            imageStore.setNameAuthorYear(`${levelData.author} - ${levelData.name} (${levelData.year})`)
-            showBtnCheck.value = false
-            showBtnContinue.value = false
-            showBtnResults.value = false
-            showBtnIDontKnow.value = true
-            showPuzzleBlock.value = true
-            answerPictureName.value = false
-            answerPuzzle.value = true
-            proposalCollectedRows.value = Array.from(
-                { length: 10 },
-                () => false
-            )
-        }
+            }
+        )
+        const dataImg = await responseImg.json()
+        const { download_url: imageSrc } = dataImg.find(item => item.path === `images/${levelData.cutSrc}`)
+        imageStore.setSrc(imageSrc)
+        imageStore.setName(levelData.imageSrc)
+        imageStore.setNameAuthorYear(`${levelData.author} - ${levelData.name} (${levelData.year})`)
+        showBtnCheck.value = false
+        showBtnContinue.value = false
+        showBtnResults.value = false
+        showBtnIDontKnow.value = true
+        showPuzzleBlock.value = true
+        answerPictureName.value = false
+        answerPuzzle.value = true
+        proposalCollectedRows.value = Array.from({ length: 10 }, () => false)
     }
-)
+})
 
 const isDragging = ref(false)
-const proposalCollectedRows = ref<boolean[]>(
-    Array.from({ length: 10 }, () => false)
-)
+const proposalCollectedRows = ref<boolean[]>(Array.from({ length: 10 }, () => false))
 const showBtnCheck = ref(false)
 const showBtnIDontKnow = ref(false)
 const showBtnContinue = ref(false)
@@ -134,22 +106,21 @@ const onDragStart = (evt, word: string, idx: number) => {
     isDragging.value = true
     dragWordStore.setDragWord({ word, idx })
 }
-const handleDrop = (evt) => {
+const handleDrop = evt => {
     isDragging.value = false
 
-    if (evt.target.closest('.image-answers')) {
+    if (evt.target.closest(".image-answers")) {
         const index = dragWordStore.getDragIndex
 
         if (index !== -1) {
             mixedWords.value.splice(index, 1)
         }
 
-        const currentIdx =
-            roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+        const currentIdx = roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
         const currentRow = answerFields.value[currentIdx]
         const firstEmpty = currentRow?.indexOf(null)
 
-        if (currentRow && typeof firstEmpty === 'number' && firstEmpty !== -1) {
+        if (currentRow && typeof firstEmpty === "number" && firstEmpty !== -1) {
             currentRow[firstEmpty] = dragWordStore.getDragWord
         }
 
@@ -161,43 +132,33 @@ const handleDrop = (evt) => {
     }
 }
 
-const onDragOver = (evt) => {
+const onDragOver = evt => {
     // console.log(evt)
 }
 const answerFields = ref<(string | null)[][]>([])
 
 const checkAnswer = () => {
-    const answerArr =
-        answerFields.value[
-            roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
-        ]
-    const rightAnswer = sentenceGuess.getSentenceEn.split(' ')
+    const answerArr = answerFields.value[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+    const rightAnswer = sentenceGuess.getSentenceEn.split(" ")
 
-    if (answerArr?.join(' ') === rightAnswer.join(' ')) {
-        console.log('true')
+    if (answerArr?.join(" ") === rightAnswer.join(" ")) {
+        console.log("true")
     } else {
-        console.log('false')
+        console.log("false")
     }
 
-    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(
-        roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx + 1
-    )
+    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx + 1)
     showBtnCheck.value = false
     showBtnIDontKnow.value = true
 }
 
 const iDontKnowHandler = () => {
     const currentIdx = roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
-    const answerArr =
-    answerFields.value[
-        currentIdx
-    ]
-    const rightAnswer = sentenceGuess.getSentenceEn.split(' ')
+    const answerArr = answerFields.value[currentIdx]
+    const rightAnswer = sentenceGuess.getSentenceEn.split(" ")
     answerArr?.splice(0)
     answerArr?.push(...rightAnswer)
-    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(
-        currentIdx + 1
-    )
+    roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(currentIdx + 1)
     showBtnCheck.value = false
     proposalCollectedRows.value[currentIdx] = true
 }
@@ -206,24 +167,23 @@ watch(
     () => roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx,
     async () => {
         const LAST_LEVEL = 10
-        
+
         if (roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx === LAST_LEVEL) {
             showBtnIDontKnow.value = false
             showBtnContinue.value = true
             showBtnResults.value = true
+            sentenceGuess.setSentenceRu("")
 
-             const responseImg = await fetch(
+            const responseImg = await fetch(
                 `https://api.github.com/repos/rolling-scopes-school/rss-puzzle-data/contents/images/level${curLevelStore.getCurLevel}/`,
                 {
                     headers: {
-                        Authorization: `Bearer ${TOKEN}`,
-                    },
+                        Authorization: `Bearer ${TOKEN}`
+                    }
                 }
             )
             const dataImg = await responseImg.json()
-            const { download_url: imageSrc } = dataImg.find(
-                (item) => item.path === `images/${imageStore.getName}`
-            )
+            const { download_url: imageSrc } = dataImg.find(item => item.path === `images/${imageStore.getName}`)
             imageStore.setSrc(imageSrc)
             showPuzzleBlock.value = false
             answerPictureName.value = true
@@ -238,21 +198,53 @@ watch(
         const numberOfRounds = roundNumber.getCurRound - 1
         const { words } = rounds[numberOfRounds]
         wordsStore.setWords(words)
-        sentenceGuess.setSentenceRu(
-            words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
-                .textExampleTranslate
-        )
-        sentenceGuess.setSentenceEn(
-            words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
-                .textExample
-        )
-        const wordsArray =
-            words[
-                roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
-            ].textExample.split(' ')
+        const { audioExample, textExampleTranslate, textExample } = words[roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx]
+
+        updateSound(audioExample)
+        sentenceGuess.setSentenceRu(textExampleTranslate)
+        sentenceGuess.setSentenceEn(textExample)
+        const wordsArray = textExample.split(" ")
         mixedWords.value = wordsArray.sort(() => Math.random() - 0.5)
     }
 )
+
+const continueHandler = () => {
+    const curRound = roundNumber.getCurRound
+    const curLevel = curLevelStore.getCurLevel
+    const allLevels = curLevelStore.getAllLevels
+    const allRounds = roundNumber.getAllRounds
+
+    if (curRound < allRounds) {
+        roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+        roundNumber.setCurRound(curRound + 1)
+        showPuzzleBlock.value = true
+        showBtnResults.value = false
+        showBtnContinue.value = false
+    } else {
+        if (curLevel < allLevels) {
+            updateLevel(String(curLevel + 1))
+            roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
+            curLevelStore.setCurLevel(curLevel + 1)
+            roundNumber.setCurRound(1)
+            showPuzzleBlock.value = true
+            showBtnResults.value = false
+            showBtnContinue.value = false
+        } else {
+            showBtnContinue.value = false
+        }
+    }
+}
+
+const audioPlayer = ref<HTMLAudioElement | null>(null)
+const playAudio = () => {
+    const ref = audioPlayer.value
+
+    if (!ref) {
+        return
+    }
+
+    ref.play()
+}
 </script>
 
 <template>
@@ -266,7 +258,8 @@ watch(
         <div class="wrapper" v-if="levels">
             <HeaderGamePage />
             <div class="translate">
-                <button type="button" class="translate__btn"></button>
+                <button v-if="sentenceGuess.getSentenceRu" type="button" class="translate__btn" @click="playAudio()"></button>
+                <audio ref="audioPlayer" :src="`${sentenceGuess.getSound}`" class="translate__sound"></audio>
                 <p class="translate__text">
                     {{ sentenceGuess.getSentenceRu }}
                 </p>
@@ -327,7 +320,7 @@ watch(
                 >
                     Check
                 </button>
-                <button v-if="showBtnContinue" type="button" class="btn" @click="log('Continue')">
+                <button v-if="showBtnContinue" type="button" class="btn" @click="continueHandler()">
                     Continue
                 </button>
                 <button v-if="showBtnResults" type="button" class="btn" @click="log('Results')">
@@ -451,6 +444,11 @@ watch(
     flex-direction: column;
     align-items: center;
     margin: 0 0 0.5rem 0;
+    height: 48px;
+}
+
+.error, .loading {
+    color:#333
 }
 
 .translate__text {
@@ -469,6 +467,15 @@ watch(
     background-position: center;
     background-repeat: no-repeat;
     filter: invert(1);
+    transition: all 0.3s;
+}
+
+.translate__btn:hover {
+    transform: scale(1.2);
+}
+
+.translate__btn:active {
+    transform: scale(1);
 }
 
 .answer {
