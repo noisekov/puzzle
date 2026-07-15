@@ -1,8 +1,6 @@
 import { getDataLevel } from "./getDataLevel"
 import { roundStore, levelStore, roundDataStore, sentenceCurGuess } from "../store/store"
 
-export const log = (msg: string) => console.log(msg)
-
 export const updateLevel = async (level: string) => {
     const roundData = roundDataStore()
 

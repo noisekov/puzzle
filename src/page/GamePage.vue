@@ -1,10 +1,21 @@
 <script lang="ts" setup>
 import HeaderGamePage from "../components/HeaderGamePage.vue"
-import { log, updateLevel, updateSound } from "../utils/utils"
+import { updateLevel, updateSound } from "../utils/utils"
 import { ref, watch } from "vue"
 import { useRoute } from "vue-router"
 const route = useRoute()
-import { allData, roundDataStore, roundStore, wordsCurRound, sentenceCurGuess, image, levelStore, dragWord, roundCurWordNeedGuessIdx } from "../store/store"
+import {
+    allData,
+    roundDataStore,
+    roundStore,
+    wordsCurRound,
+    sentenceCurGuess,
+    image,
+    levelStore,
+    dragWord,
+    roundCurWordNeedGuessIdx,
+    musicHandler
+} from "../store/store"
 
 const loading = ref(false)
 const error = ref(null)
@@ -245,6 +256,7 @@ const playAudio = () => {
 
     ref.play()
 }
+const musicHandlerStore = musicHandler()
 </script>
 
 <template>
@@ -257,7 +269,7 @@ const playAudio = () => {
         <div v-if="error" class="error">{{ error }}</div>
         <div class="wrapper" v-if="levels">
             <HeaderGamePage />
-            <div class="translate">
+            <div v-if="musicHandlerStore.getMusic" class="translate">
                 <button v-if="sentenceGuess.getSentenceRu" type="button" class="translate__btn" @click="playAudio()"></button>
                 <audio ref="audioPlayer" :src="`${sentenceGuess.getSound}`" class="translate__sound"></audio>
                 <p class="translate__text">
@@ -323,7 +335,7 @@ const playAudio = () => {
                 <button v-if="showBtnContinue" type="button" class="btn" @click="continueHandler()">
                     Continue
                 </button>
-                <button v-if="showBtnResults" type="button" class="btn" @click="log('Results')">
+                <button v-if="showBtnResults" type="button" class="btn" @click="() => console.log('Results')">
                     Results
                 </button>
             </div>

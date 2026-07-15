@@ -1,6 +1,12 @@
 <script setup="ts">
-import Select from './Select.vue'
-import { log } from '../utils/utils'
+import { musicHandler } from "../store/store.ts"
+import Select from "./Select.vue"
+
+const musicHandlerStore = musicHandler()
+
+const volumeHandler = () => {
+    musicHandlerStore.setMusic(!musicHandlerStore.getMusic)
+}
 </script>
 
 <template>
@@ -13,22 +19,7 @@ import { log } from '../utils/utils'
             <button
                 class="btn btn-volume"
                 type="button"
-                @click="log('volume')"
-            ></button>
-            <button
-                class="btn btn-doc"
-                type="button"
-                @click="log('doc')"
-            ></button>
-            <button
-                class="btn btn-music"
-                type="button"
-                @click="log('music')"
-            ></button>
-            <button
-                class="btn btn-pic"
-                type="button"
-                @click="log('pic')"
+                @click="volumeHandler()"
             ></button>
         </div>
     </header>
@@ -46,7 +37,9 @@ import { log } from '../utils/utils'
     justify-content: space-between;
     align-items: center;
     width: 100%;
+    margin-bottom: 10px;
 }
+
 .btns {
     display: flex;
     gap: 1rem;
@@ -70,15 +63,7 @@ import { log } from '../utils/utils'
         background-size: cover;
     }
 }
-.btn-music:after {
-    background-image: url(/src/assets/music.svg);
-}
-.btn-pic:after {
-    background-image: url(/src/assets/picture.svg);
-}
-.btn-doc:after {
-    background-image: url(/src/assets/doc.svg);
-}
+
 .btn-volume:after {
     background-image: url(/src/assets/volume.svg);
 }

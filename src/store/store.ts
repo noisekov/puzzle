@@ -164,3 +164,17 @@ export const roundCurWordNeedGuessIdx = defineStore("roundCurWordNeedGuessIdx", 
         }
     }
 })
+
+export const musicHandler = defineStore("music", {
+    state: () => ({
+        music: true
+    }),
+    getters: {
+        getMusic: state => state.music
+    },
+    actions: {
+        setMusic(value: boolean) {
+            this.music = value
+        }
+    }
+})
