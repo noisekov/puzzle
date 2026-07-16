@@ -16,7 +16,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted } from "vue"
-import { allData, roundStore, levelStore, roundDataStore } from "../store/store"
+import { allData, roundStore, levelStore, roundDataStore, roundResults } from "../store/store"
 import { getDataLevel } from "../utils/getDataLevel"
 import { updateLevel, updateSound } from "../utils/utils"
 
@@ -26,6 +26,7 @@ const { data } = allData()
 const levelsStore = levelStore()
 const roundsStore = roundStore()
 const roundData = roundDataStore()
+const roundResultsStore = roundResults()
 
 const currentValue = computed(() => {
     if (props.name === "Level") {
@@ -83,6 +84,8 @@ const selectHandler = async (evt: Event, name: string) => {
     const select = evt.target
 
     if (!(select instanceof HTMLSelectElement)) return
+
+    roundResultsStore.clearRoundResults()
 
     if (name === "Level") {
         updateLevel(select.value)

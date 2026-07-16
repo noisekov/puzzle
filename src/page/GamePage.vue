@@ -14,7 +14,9 @@ import {
     levelStore,
     dragWord,
     roundCurWordNeedGuessIdx,
-    musicHandler
+    musicHandler,
+    roundResults,
+    showModal
 } from "../store/store"
 
 const loading = ref(false)
@@ -28,6 +30,7 @@ const sentenceGuess = sentenceCurGuess()
 const imageStore = image()
 const curLevelStore = levelStore()
 const dragWordStore = dragWord()
+const roundResultsStore = roundResults()
 const roundCurWordNeedGuessIdxStore = roundCurWordNeedGuessIdx()
 const TOKEN = import.meta.env.VITE_GITHUB_TOKEN
 
@@ -117,10 +120,10 @@ const onDragStart = (evt, word: string, idx: number) => {
     isDragging.value = true
     dragWordStore.setDragWord({ word, idx })
 }
-const handleDrop = evt => {
+const handleDrop = (evt: DragEvent) => {
     isDragging.value = false
 
-    if (evt.target.closest(".image-answers")) {
+    if (evt.target instanceof Element && evt.target.closest(".image-answers")) {
         const index = dragWordStore.getDragIndex
 
         if (index !== -1) {
@@ -153,9 +156,9 @@ const checkAnswer = () => {
     const rightAnswer = sentenceGuess.getSentenceEn.split(" ")
 
     if (answerArr?.join(" ") === rightAnswer.join(" ")) {
-        console.log("true")
+        roundResultsStore.setRoundResultsKnow(rightAnswer.join(" "))
     } else {
-        console.log("false")
+        roundResultsStore.setRoundResultsDontKnow(rightAnswer.join(" "))
     }
 
     roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx + 1)
@@ -172,6 +175,7 @@ const iDontKnowHandler = () => {
     roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(currentIdx + 1)
     showBtnCheck.value = false
     proposalCollectedRows.value[currentIdx] = true
+    roundResultsStore.setRoundResultsDontKnow(rightAnswer.join(" "))
 }
 
 watch(
@@ -227,19 +231,21 @@ const continueHandler = () => {
 
     if (curRound < allRounds) {
         roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
-        roundNumber.setCurRound(curRound + 1)
+        roundNumber.setCurRound(+curRound + 1)
         showPuzzleBlock.value = true
         showBtnResults.value = false
         showBtnContinue.value = false
+        roundResultsStore.clearRoundResults()
     } else {
         if (curLevel < allLevels) {
-            updateLevel(String(curLevel + 1))
+            updateLevel(String(+curLevel + 1))
             roundCurWordNeedGuessIdxStore.setRoundCurWordNeedGuessIdx(0)
-            curLevelStore.setCurLevel(curLevel + 1)
+            curLevelStore.setCurLevel(+curLevel + 1)
             roundNumber.setCurRound(1)
             showPuzzleBlock.value = true
             showBtnResults.value = false
             showBtnContinue.value = false
+            roundResultsStore.clearRoundResults()
         } else {
             showBtnContinue.value = false
         }
@@ -257,6 +263,44 @@ const playAudio = () => {
     ref.play()
 }
 const musicHandlerStore = musicHandler()
+
+const addPuzzleHandler = (event: MouseEvent, word: string, idx: number) => {
+    if (idx !== -1) {
+        mixedWords.value.splice(idx, 1)
+    }
+
+    const currentIdx = roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+    const currentRow = answerFields.value[currentIdx]
+    const firstEmpty = currentRow?.indexOf(null)
+
+    if (currentRow && typeof firstEmpty === "number" && firstEmpty !== -1) {
+        currentRow[firstEmpty] = word
+    }
+
+    if (currentRow && !currentRow.includes(null)) {
+        proposalCollectedRows.value[currentIdx] = true
+        showBtnCheck.value = true
+        showBtnIDontKnow.value = false
+    }
+}
+
+const removePuzzleHandler = (evt: MouseEvent, word: string | null, idx: number) => {
+    if (!(evt.target instanceof Element) || !evt.target.closest(".answered")) {
+        if (word) {
+            mixedWords.value.push(word)
+        }
+
+        const currentIdx = roundCurWordNeedGuessIdxStore.getRoundCurWordNeedGuessIdx
+        const currentRow = answerFields.value[currentIdx]
+
+        currentRow?.splice(idx, 1, null)
+    }
+}
+
+const showModalStore = showModal()
+const resultsHandler = () => {
+    showModalStore.setShowModal()
+}
 </script>
 
 <template>
@@ -301,6 +345,7 @@ const musicHandlerStore = musicHandler()
                                     'puzzle--empty': slot === null,
                                     'puzzle--filled': slot !== null,
                                 }"
+                                @dblclick="removePuzzleHandler($event, slot, slotIdx)"
                                 >{{ slot }}</span
                             >
                         </div>
@@ -310,10 +355,11 @@ const musicHandlerStore = musicHandler()
                     <span
                         v-if="answerPuzzle"
                         v-for="(word, idx) in mixedWords"
-                        :key="word"
+                        :key="idx"
                         class="puzzle"
                         draggable="true"
                         @dragstart="onDragStart($event, word, idx)"
+                        @dblclick="addPuzzleHandler($event, word, idx)"
                     >
                         {{ word }}
                     </span>
@@ -335,15 +381,115 @@ const musicHandlerStore = musicHandler()
                 <button v-if="showBtnContinue" type="button" class="btn" @click="continueHandler()">
                     Continue
                 </button>
-                <button v-if="showBtnResults" type="button" class="btn" @click="() => console.log('Results')">
+                <button v-if="showBtnResults" type="button" class="btn" @click="resultsHandler()">
                     Results
                 </button>
             </div>
         </div>
     </div>
+    <div v-if="showModalStore.getShowModal" class="modal">
+        <div class="modal-wrap">
+            <div class="results">
+                <div class="results__image-wrapper">
+                    <img
+                        :src="`${imageStore.getSrc}`"
+                        alt="image"
+                        class="results__image"
+                    />
+                    <span class="results__title" v-if="answerPictureName">{{ imageStore.getNameAuthorYear }}</span>
+                </div>
+                <span class="dont-know">I don't know: {{ roundResultsStore.getRoundResults.iDontKnow.length }}</span>
+                <div v-for="(sentenceIdontKnow, idx) in roundResultsStore.getRoundResults.iDontKnow" 
+                :key="idx">
+                    <span>{{ idx + 1 }}: {{ sentenceIdontKnow }}</span>            
+                </div>
+                <span class="know">I know: {{  roundResultsStore.getRoundResults.iKnow.length}}</span>
+                <div v-for="(sentenceIKnow, idx) in roundResultsStore.getRoundResults.iKnow" 
+                :key="idx">
+                    <span>{{ idx + 1 }}: {{ sentenceIKnow }}</span>            
+                </div>
+            </div>
+            <button type="button" class="btn btn__results" @click="() => {
+                showModalStore.setShowModal()
+                continueHandler()
+            }">Continue</button>
+        </div>
+    </div>
 </template>
 
 <style scoped>
+.dont-know, .know {
+    align-self: center;
+    margin: 0.5rem 0 1rem;
+}
+
+.know {
+    color:green
+}
+
+.dont-know {
+    color: red
+}
+
+.results {
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    flex-direction: column;
+    margin-bottom: 1rem;
+}
+
+.results__image-wrapper {
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.results__title {
+    text-align: center;
+}
+
+.results__image {
+    width: 200px;
+    height: 100px;
+    margin-bottom: 0.5rem;
+}
+
+.btn__results {
+    align-self: center;
+}
+
+.modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    background:
+        linear-gradient(rgba(0, 0, 0, 0.7)), url(/src/assets/background.jpg);
+}
+
+.modal-wrap {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: start;
+    justify-content: center;
+    flex-direction: column;
+    height: auto;
+    color: #333;
+    background-color: #fff;
+    border-radius: 0.5em;
+    padding: 2rem;
+}
+
 .container {
     display: flex;
     flex-direction: column;

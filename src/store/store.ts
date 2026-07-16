@@ -178,3 +178,46 @@ export const musicHandler = defineStore("music", {
         }
     }
 })
+
+export const roundResults = defineStore("roundResults", {
+    state: (): {
+        roundResults: {
+            iKnow: string[]
+            iDontKnow: string[]
+        }
+    } => ({
+        roundResults: {
+            iKnow: [],
+            iDontKnow: []
+        }
+    }),
+    getters: {
+        getRoundResults: state => state.roundResults
+    },
+    actions: {
+        setRoundResultsKnow(value: string) {
+            this.roundResults.iKnow.push(value)
+        },
+        setRoundResultsDontKnow(value: string) {
+            this.roundResults.iDontKnow.push(value)
+        },
+        clearRoundResults() {
+            this.roundResults.iKnow = []
+            this.roundResults.iDontKnow = []
+        }
+    }
+})
+
+export const showModal = defineStore("showModal", {
+    state: () => ({
+        showModal: false
+    }),
+    getters: {
+        getShowModal: state => state.showModal
+    },
+    actions: {
+        setShowModal() {
+            this.showModal = !this.getShowModal
+        }
+    }
+})
