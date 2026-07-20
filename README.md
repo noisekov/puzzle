@@ -33,3 +33,8 @@ npm run dev
 ```
 
 After running, the project will be available at the address shown in the terminal(`http://localhost:5173`).
+
+screen
+![alt text](image.png)
+![alt text](image-1.png)
+![alt text](image-2.png)
